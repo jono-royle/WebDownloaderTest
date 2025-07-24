@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "WebDownloaderApp": {
+      "commandName": "Project",
+      "commandLineArgs": "https://spacebiff.com/2025/07/23/nature/ C:\\Users\\monoj\\Documents\\WebOutput\\test1.txt"
+    }
+  }
+}
