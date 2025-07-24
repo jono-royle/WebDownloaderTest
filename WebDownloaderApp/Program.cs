@@ -46,21 +46,28 @@ class Program
     {
         if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
         {
-            var response = await client.GetAsync(url);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                byte[] data = await response.Content.ReadAsByteArrayAsync();
-                string fileName = uri.Host + $"_{urlNumber}";
-                string filePath = Path.Combine(outputFolder, fileName);
+                var response = await client.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    byte[] data = await response.Content.ReadAsByteArrayAsync();
+                    string fileName = uri.Host + $"_{urlNumber}";
+                    string filePath = Path.Combine(outputFolder, fileName);
 
-                FileStream fileStream = File.Create(filePath);
-                await fileStream.WriteAsync(data, 0, data.Length);
-                fileStream.Close();
-                Console.WriteLine($"Downloaded webpage {urlNumber}, url: {url} to {fileName}");
+                    FileStream fileStream = File.Create(filePath);
+                    await fileStream.WriteAsync(data, 0, data.Length);
+                    fileStream.Close();
+                    Console.WriteLine($"Downloaded webpage {urlNumber}, url: {url} to {fileName}");
+                }
+                else
+                {
+                    Console.WriteLine($"Response code for webpage {urlNumber}, url: {url} - {response.StatusCode}");
+                }
             }
-            else
+            catch (Exception ex) 
             {
-                Console.WriteLine($"Response code for webpage {urlNumber}, url: {url} - {response.StatusCode}");
+                Console.WriteLine($"Error: for {url} exception {ex.Message}");
             }
         }
         else
