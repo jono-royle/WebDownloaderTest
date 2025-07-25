@@ -38,11 +38,12 @@ class Program
 
         using (HttpClient client = new HttpClient())
         {
+            var webpageDownloader = new WebpageDownloader(client, outputFolder, retryMaximum);
             List<Task> tasks = [];
             int i = 0;
             foreach (var url in urls)
             {
-                tasks.Add(DownloadWebpage(client, url, outputFolder, i, retryMaximum));
+                tasks.Add(webpageDownloader.DownloadWebpage(url, i));
                 i++;
             }
 
@@ -50,57 +51,5 @@ class Program
 
             Console.WriteLine("All downloads completed");
         }
-    }
-
-    private static async Task DownloadWebpage(HttpClient client, string url, string outputFolder, int urlNumber, int retryMaximum)
-    {
-        int retryAttempts = 0;
-        bool succeededConnection = false;
-        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
-        {
-            try
-            {
-                while (!succeededConnection && retryAttempts <= retryMaximum)
-                {
-                    var response = await client.GetAsync(url);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        succeededConnection = true;
-                        await CreateOutputFileFromPage(url, outputFolder, urlNumber, uri, response);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Response code for webpage {urlNumber}, url: {url} - {response.StatusCode}");
-                        retryAttempts++;
-                        if (retryAttempts <= retryMaximum)
-                        {
-                            Console.WriteLine($"Retrying connection for webpage {urlNumber}");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex) 
-            {
-                Console.WriteLine($"Error: for {url} exception {ex.Message}");
-            }
-        }
-        else
-        {
-            Console.WriteLine($"Error: {url} is not a valid URL");
-        }
-
-
-    }
-
-    private static async Task CreateOutputFileFromPage(string url, string outputFolder, int urlNumber, Uri uri, HttpResponseMessage response)
-    {
-        byte[] data = await response.Content.ReadAsByteArrayAsync();
-        string fileName = uri.Host + $"_{urlNumber}";
-        string filePath = Path.Combine(outputFolder, fileName);
-
-        FileStream fileStream = File.Create(filePath);
-        await fileStream.WriteAsync(data, 0, data.Length);
-        fileStream.Close();
-        Console.WriteLine($"Downloaded webpage {urlNumber}, url: {url} to {fileName}");
     }
 }
