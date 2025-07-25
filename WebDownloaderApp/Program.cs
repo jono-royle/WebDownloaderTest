@@ -53,6 +53,7 @@ class Program
             ConcurrentQueue<(string url, int index)> queue = new ConcurrentQueue<(string, int)>();
             List<Task> activeTasks = new List<Task>();
             object lockObj = new object();
+            //Only start downloading the first maxConcurrent URLs, add the rest to a queue
             int initialDownloadListLength = Math.Min(urls.Length, maxConcurrent);
             for (int i = 0; i < urls.Length; i++) 
             {
@@ -75,6 +76,7 @@ class Program
         static async Task StartDownload(WebpageDownloader downloader, string url, int index, ConcurrentQueue<(string url, int index)> queue, List<Task> activeTasks, object lockObj)
         {
             await downloader.DownloadWebpage(url, index);
+            //Whenever a download finishes, attempt to start the next one in the queue
             if (queue.TryDequeue(out var next))
             {
                 Console.WriteLine($"Dequeued next url download: {next.url}");

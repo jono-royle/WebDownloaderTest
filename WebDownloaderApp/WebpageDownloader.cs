@@ -31,6 +31,7 @@
                     }
                     else
                     {
+                        //Retry a failed connection up to a set maximum times. Could also add a delay here between retry attempts.
                         Console.WriteLine($"Response code for webpage {urlNumber}, url: {url} - {response.StatusCode}");
                         retryAttempts++;
                         if (retryAttempts <= _retryMaximum)
