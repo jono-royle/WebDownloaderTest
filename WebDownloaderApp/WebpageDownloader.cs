@@ -1,4 +1,4 @@
-﻿internal class WebpageDownloader
+﻿public class WebpageDownloader
 {
 
     private HttpClient _httpClient;
