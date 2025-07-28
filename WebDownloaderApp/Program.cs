@@ -49,18 +49,21 @@ class Program
 
         using (HttpClient client = new HttpClient())
         {
+            client.Timeout = TimeSpan.FromSeconds(30);
             var webpageDownloader = new WebpageDownloader(client, outputFolder, retryMaximum);
             ConcurrentQueue<(string url, int index)> queue = new ConcurrentQueue<(string, int)>();
             List<Task> activeTasks = new List<Task>();
             object lockObj = new object();
             //Only start downloading the first maxConcurrent URLs, add the rest to a queue
-            int initialDownloadListLength = Math.Min(urls.Length, maxConcurrent);
             for (int i = 0; i < urls.Length; i++) 
             {
-                if (i < initialDownloadListLength) 
+                if (i < maxConcurrent) 
                 {
                     var task = StartDownload(webpageDownloader, urls[i], i, queue, activeTasks, lockObj);
-                    lock (lockObj) activeTasks.Add(task);
+                    lock (lockObj) 
+                    {
+                        activeTasks.Add(task);
+                    }
                 }
                 else
                 {
@@ -68,7 +71,21 @@ class Program
                 }
             }
 
-            await Task.WhenAll(activeTasks);
+            //Can't just wait for Task.WhenAll(activeTasks)
+            //- race condition when new item hasn't been added from queue yet
+            while (true)
+            {
+                bool isActiveEmpty;
+                lock (lockObj)
+                {
+                    activeTasks.RemoveAll(t => t.IsCompleted);
+                    isActiveEmpty = activeTasks.Count == 0;
+                }
+                if (queue.IsEmpty && isActiveEmpty)
+                {
+                    break;
+                }
+            };
 
             Console.WriteLine("All downloads completed");
         }
@@ -81,11 +98,10 @@ class Program
             {
                 Console.WriteLine($"Dequeued next url download: {next.url}");
                 var nextTask = StartDownload(downloader, next.url, next.index, queue, activeTasks, lockObj);
-                lock (lockObj) activeTasks.Add(nextTask);
-            }
-            lock (lockObj)
-            {
-                activeTasks.RemoveAll(t => t.IsCompleted);
+                lock (lockObj) 
+                {
+                    activeTasks.Add(nextTask);
+                } 
             }
         }
     }
