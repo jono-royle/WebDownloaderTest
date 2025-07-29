@@ -71,6 +71,8 @@ class Program
                 }
             }
 
+            await Task.WhenAll(activeTasks);
+
             //Can't just wait for Task.WhenAll(activeTasks)
             //- race condition when new item hasn't been added from queue yet
             while (true)
